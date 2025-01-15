@@ -16,8 +16,13 @@ import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.Validation.Required;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WordCount {
+
+    private static final Logger logger = LoggerFactory.getLogger(WordCount.class);
+
     public interface WordCountOptions extends PipelineOptions {
         @Description("Path of the input file")
         @Required
@@ -33,6 +38,7 @@ public class WordCount {
     public static void main(String[] args) {
 
         WordCountOptions options = PipelineOptionsFactory.fromArgs(args).withValidation().as(WordCountOptions.class);
+        logger.info("Parsed pipeline options: inputFile={}, outputPrefix={}", options.getInputFile(), options.getOutputPrefix());
 
         Pipeline pipeline = Pipeline.create(options);
 
@@ -45,6 +51,8 @@ public class WordCount {
                         .via((KV<String, Long> wordCount) -> wordCount.getKey() + ": " + wordCount.getValue()))
                 .apply("WriteResults", TextIO.write().to(options.getOutputPrefix()).withSuffix(".txt").withoutSharding());
 
+        logger.info("Pipeline execution started");
         pipeline.run().waitUntilFinish();
+        logger.info("Pipeline execution finished");
     }
 }
